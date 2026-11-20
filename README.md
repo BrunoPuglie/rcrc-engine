@@ -1,26 +1,40 @@
-# `rcrc-engine` (`rcrc`)
+<h1 align="center">rcrc-engine</h1>
 
-**Lightweight Geospatial Inference & Multi-Date Temporal Analysis Engine for Soybean Red Crown Rot (RCR)**
+<p align="center">
+  Lightweight geospatial inference and temporal analysis for<br>
+  <b>Soybean Red Crown Rot (RCR)</b>
+</p>
 
-`rcrc-engine` extracts the core preprocessing, L2 Regularized Logistic Regression inference (`rcrc v3.1`), and multi-temporal pixel transition pipeline from the Red Crown Rot Classifier research framework into a clean, pip-installable Python library (`import rcrc`).
+<p align="center">
+  <a href="https://doi.org/10.3390/rs18213839"><img src="https://img.shields.io/badge/DOI-10.3390%2Frs18213839-DC2626?style=flat-square" alt="DOI"></a>
+  <img src="https://img.shields.io/badge/model-rcrc%20v3.1-3B82F6?style=flat-square" alt="model">
+  <img src="https://img.shields.io/badge/python-3.9%2B-555?style=flat-square" alt="python">
+  <img src="https://img.shields.io/badge/imagery-PlanetScope%208--band-555?style=flat-square" alt="imagery">
+</p>
 
-Built for **Google Colab**, **VS Code / Jupyter**, batch HPC/CLI workflows, and **R (`reticulate`)** without requiring `scikit-learn`, `joblib`, or Streamlit.
+`rcrc-engine` packages the preprocessing, L2-regularized logistic inference (`rcrc v3.1`) and multi-date pixel transition pipeline of the Red Crown Rot Classifier into a pip-installable library (`import rcrc`). It runs in **Google Colab**, **VS Code / Jupyter**, **HPC / CLI** and **R (`reticulate`)**, with no `scikit-learn`, `joblib` or Streamlit.
 
 ---
 
-## Key Features
+## Features
 
-- **Zero Heavy ML Dependencies**: Evaluates L2 logistic inference directly from stored weights (`MODEL_REGISTRY["v3.1"]`) using `numpy` and `scipy.special.expit`, installing in seconds.
-- **PlanetScope 8-Band Native**: Designed for `3B_AnalyticMS_SR_8b_harmonized` imagery (Band 2 Blue, Band 4 Green, Band 5 Yellow, Band 6 Red, Band 7 Red Edge, Band 8 NIR).
-- **Automated Canopy Masking & Local Normalization**:
-  - Clips scenes and Peak-NDVI baseline imagery to field boundaries (with optional metric inward buffer, e.g., `buffer_m=-3.0`).
-  - Applies the early/peak-season **3-SD NDVI canopy mask** (`mean - 3.0 * SD`) to exclude bare soil, grassed waterways, and non-crop pixels.
-  - Computes the 13 `rcrc v3.1` spectral features (NDVI, GNDVI, NDRE, EVI, CI, CIRe, CSI, plus Bands 6, 8, 7, 4, 2, 5 — excluding TDVI) with local per-field `[0, 1]` min-max normalization followed by training-set z-score standardization.
-- **Cloud-Optimized GeoTIFF (COG) Export**: Outputs continuous probability `P(RCR)` and binary classification (`1 = RCR Diseased`, `0 = Healthy`, `-1 = nodata`) COGs.
-- **Multi-Date Temporal Stack & Transition Tracking**:
-  - Aligns chronological scenes via `rioxarray.reproject_match` and enforces a shared seasonal canopy mask.
-  - Tracks pixel-level state transitions (`0`: Unaffected `0->0`, `1`: New Expansion `0->1`, `10`: Apparent Recovery `1->0`, `11`: Persistent Infection `1->1`).
-  - Produces tidy `pandas.DataFrame` tables ready for LMM/GLMM disease progression analysis in R (`lme4` / `glmmTMB`) or Python (`statsmodels`).
+| | |
+| :--- | :--- |
+| **Light dependencies** | Inference from stored weights (`MODEL_REGISTRY["v3.1"]`) with `numpy` and `scipy`. Installs in seconds. |
+| **PlanetScope native** | `3B_AnalyticMS_SR_8b_harmonized`: Blue, Green, Yellow, Red, Red Edge, NIR. |
+| **Canopy masking** | Clip to field boundary (optional `buffer_m=-3.0`), then a 3-SD Peak-NDVI mask (`mean - 3.0 * SD`) removes soil, waterways and non-crop pixels. |
+| **13 spectral features** | NDVI, GNDVI, NDRE, EVI, CI, CIRe, CSI plus six bands. Per-field `[0, 1]` normalization, then z-score standardization. |
+| **COG export** | Continuous `P(RCR)` and binary class rasters (`1` diseased, `0` healthy, `-1` nodata). |
+| **Temporal tracking** | Aligns scenes, shares one canopy mask and tracks pixel transitions. Outputs tidy `pandas` tables for `lme4`, `glmmTMB` or `statsmodels`. |
+
+### Transition classes
+
+| | Code | State | Change |
+| :---: | :---: | :--- | :---: |
+| ![](https://img.shields.io/badge/%20%20%20%20%20-D8F3DC?style=flat-square) | `0` | Unaffected | `0 → 0` |
+| ![](https://img.shields.io/badge/%20%20%20%20%20-F59E0B?style=flat-square) | `1` | New expansion | `0 → 1` |
+| ![](https://img.shields.io/badge/%20%20%20%20%20-3B82F6?style=flat-square) | `10` | Apparent recovery | `1 → 0` |
+| ![](https://img.shields.io/badge/%20%20%20%20%20-DC2626?style=flat-square) | `11` | Persistent infection | `1 → 1` |
 
 ---
 
