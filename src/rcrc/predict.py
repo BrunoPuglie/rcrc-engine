@@ -147,7 +147,6 @@ def export_cog(
 def predict_scene(
     preprocessed_data: xr.Dataset | xr.DataArray,
     model_version: str = DEFAULT_MODEL_VERSION,
-    threshold: float = 0.44,
     output_dir: str | Path | None = None,
     prefix: str = "scene",
     return_rasters: bool = False,
@@ -155,9 +154,9 @@ def predict_scene(
     """Run pixel-wise RCR logistic inference on a preprocessed feature stack.
 
     Evaluates ``P(RCR)`` over valid canopy pixels using the calibrated weights
-    in ``MODEL_REGISTRY[model_version]``, applies ``threshold`` to produce binary
-    classifications (``1 = RCR Diseased``, ``0 = Healthy``, ``-1 = nodata``),
-    optionally exports Cloud-Optimized GeoTIFFs (COGs), and returns a summary
+    in ``MODEL_REGISTRY[model_version]``, applies the model's fixed decision
+    threshold (``0.48`` for ``v3.1``) to produce binary classifications
+    (``1 = RCR Diseased``, ``0 = Healthy``, ``-1 = nodata``), optionally exports Cloud-Optimized GeoTIFFs (COGs), and returns a summary
     metrics dictionary.
 
     Args:
@@ -165,8 +164,6 @@ def predict_scene(
             :func:`rcrc.preprocess.preprocess_scene`, or a 3D ``xarray.DataArray``
             of shape ``(n_features, y, x)``.
         model_version: Registered model version key (default ``"v3.1"``).
-        threshold: Classification probability cutoff in ``[0, 1]`` (default
-            ``0.44``; note ``0.48`` maximizes LOFO-CV F1 and Balanced Accuracy).
         output_dir: Optional directory where probability and binary classified
             COGs are written.
         prefix: Filename prefix used when ``output_dir`` is provided.
@@ -179,13 +176,10 @@ def predict_scene(
         and optional exported COG file paths.
 
     Raises:
-        ValueError: If ``threshold`` is outside ``[0, 1]`` or feature dimensions
-            do not match the selected model.
+        ValueError: If feature dimensions do not match the selected model.
     """
-    if not (0.0 <= threshold <= 1.0):
-        raise ValueError(f"threshold must be between 0.0 and 1.0, got {threshold}.")
-
     spec = get_model_spec(model_version)
+    threshold = float(spec["threshold"])
     expected_features = list(spec["feature_names"])
 
     if isinstance(preprocessed_data, xr.Dataset):

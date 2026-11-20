@@ -25,8 +25,9 @@ def test_registry_defaults() -> None:
     assert "NormTDVI" not in spec["feature_names"]
     assert "NormCSI" in spec["feature_names"]
     assert "NormNDRE" in spec["feature_names"]
-    assert spec["default_threshold"] == pytest.approx(0.44)
-    assert spec["optimal_f1_threshold"] == pytest.approx(0.48)
+    assert spec["threshold"] == pytest.approx(0.48)
+    for legacy_key in ("default_threshold", "optimal_f1_threshold", "high_sensitivity_threshold"):
+        assert legacy_key not in spec
 
 
 def test_register_future_model_version() -> None:
@@ -39,7 +40,7 @@ def test_register_future_model_version() -> None:
             "scaler_scale": (0.2, 0.2),
             "coefficients": (-1.0, -2.0),
             "intercept": 0.1,
-            "default_threshold": 0.50,
+            "threshold": 0.50,
         },
         overwrite=True,
     )
@@ -71,7 +72,7 @@ def test_compute_probabilities_parity_with_v3_1_weights() -> None:
     prob = compute_probabilities_from_features(x_pt1, model_version="v3.1")
     assert prob.dtype == np.float32
     assert prob[0] == pytest.approx(expected, abs=1e-6)
-    assert prob[0] < 0.44
+    assert prob[0] < spec["threshold"]
 
 
 def test_spectral_features_and_minmax_scaling() -> None:

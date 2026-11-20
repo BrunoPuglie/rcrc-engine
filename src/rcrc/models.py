@@ -93,9 +93,9 @@ MODEL_REGISTRY: dict[str, dict[str, Any]] = {
             -2.5777541659007840,  # Normb5 (Yellow)
         ),
         "intercept": 0.9944934996292226,
-        "default_threshold": 0.44,
-        "optimal_f1_threshold": 0.48,
-        "high_sensitivity_threshold": 0.44,
+        # Fixed decision threshold: maximizes LOFO-CV F1 (0.947) and Balanced
+        # Accuracy (0.945); median in-fold LOFO tuned cutoff = 0.4796.
+        "threshold": 0.48,
         "classes": {
             0: "Healthy / Asymptomatic",
             1: "RCR Diseased",
@@ -117,7 +117,7 @@ def get_model_spec(model_version: str = DEFAULT_MODEL_VERSION) -> dict[str, Any]
 
     Returns:
         Dictionary containing feature names, normalization parameters, L2
-        coefficients, intercept, and thresholds.
+        coefficients, intercept, and decision threshold.
 
     Raises:
         KeyError: If ``model_version`` is not present in ``MODEL_REGISTRY``.
@@ -144,7 +144,8 @@ def register_model(
     Args:
         version: Unique model version identifier (e.g., ``"v3.2"``).
         spec: Mapping containing ``feature_names``, ``coefficients``,
-            ``intercept``, and ``default_threshold``. Optional ``scaler_mean``
+            ``intercept``, and ``threshold`` (the model's fixed classification
+            cutoff in ``[0, 1]``). Optional ``scaler_mean``
             and ``scaler_scale`` arrays may be provided for feature
             standardization prior to the dot product.
         overwrite: Whether to replace an existing registry entry.
@@ -159,7 +160,7 @@ def register_model(
             "Pass overwrite=True to replace it."
         )
 
-    required_keys = {"feature_names", "coefficients", "intercept", "default_threshold"}
+    required_keys = {"feature_names", "coefficients", "intercept", "threshold"}
     missing = required_keys - set(spec.keys())
     if missing:
         raise ValueError(f"Model spec is missing required keys: {sorted(missing)}")
@@ -177,9 +178,9 @@ def register_model(
     if not np.isfinite(intercept):
         raise ValueError("Model intercept must be a finite number.")
 
-    threshold = float(spec["default_threshold"])
+    threshold = float(spec["threshold"])
     if not (0.0 <= threshold <= 1.0):
-        raise ValueError(f"default_threshold must be in [0, 1], got {threshold}.")
+        raise ValueError(f"threshold must be in [0, 1], got {threshold}.")
 
     scaler_mean = spec.get("scaler_mean")
     scaler_scale = spec.get("scaler_scale")
@@ -191,7 +192,7 @@ def register_model(
     normalized_spec["feature_names"] = feature_names
     normalized_spec["coefficients"] = tuple(float(c) for c in coefs)
     normalized_spec["intercept"] = intercept
-    normalized_spec["default_threshold"] = threshold
+    normalized_spec["threshold"] = threshold
 
     if scaler_mean is not None and scaler_scale is not None:
         mean_arr = np.asarray(scaler_mean, dtype=np.float64)

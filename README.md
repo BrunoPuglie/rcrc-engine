@@ -15,7 +15,7 @@ Built for **Google Colab**, **VS Code / Jupyter**, batch HPC/CLI workflows, and 
 - **Automated Canopy Masking & Local Normalization**:
   - Clips scenes and Peak-NDVI baseline imagery to field boundaries (with optional metric inward buffer, e.g., `buffer_m=-3.0`).
   - Applies the early/peak-season **3-SD NDVI canopy mask** (`mean - 3.0 * SD`) to exclude bare soil, grassed waterways, and non-crop pixels.
-  - Computes the 13 RCRC v3.1 spectral features (NDVI, GNDVI, NDRE, EVI, CI, CIRe, CSI, plus Bands 6, 8, 7, 4, 2, 5 — excluding TDVI) with local per-field `[0, 1]` min-max normalization followed by training-set z-score standardization.
+  - Computes the 13 `rcrc v3.1` spectral features (NDVI, GNDVI, NDRE, EVI, CI, CIRe, CSI, plus Bands 6, 8, 7, 4, 2, 5 — excluding TDVI) with local per-field `[0, 1]` min-max normalization followed by training-set z-score standardization.
 - **Cloud-Optimized GeoTIFF (COG) Export**: Outputs continuous probability `P(RCR)` and binary classification (`1 = RCR Diseased`, `0 = Healthy`, `-1 = nodata`) COGs.
 - **Multi-Date Temporal Stack & Transition Tracking**:
   - Aligns chronological scenes via `rioxarray.reproject_match` and enforces a shared seasonal canopy mask.
@@ -47,14 +47,13 @@ rcrc <- import("rcrc")
 
 ---
 
-## Decision Threshold Guidance (`0.44` vs. `0.48`)
+## Decision Threshold (`0.48`)
 
-| Threshold | Empirical Basis (LOFO-CV, $N=2{,}921$, 15 fields) | Accuracy | Balanced Acc | Precision | Recall | F1-Score | Best Use Case |
-| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :--- |
-| **`0.48`** | Peak out-of-fold F1 & Balanced Accuracy; median in-fold LOFO tuned cutoff (`0.4796`) | **0.945** | **0.945** | **0.954** | 0.941 | **0.947** | Whole-field mapping, area quantification, manuscript figures |
-| **`0.44`** | Precision-Recall equilibrium (`Prec == Rec`); package & metadata default | 0.943 | 0.942 | 0.946 | **0.946** | 0.946 | High-sensitivity / early scouting detection |
+`rcrc v3.1` classifies a pixel as RCR-diseased when `P(RCR) >= 0.48`. The threshold is fixed as part of the model specification (`MODEL_REGISTRY["v3.1"]["threshold"]`) and is applied automatically by `predict_scene()` and `analyze_temporal_stack()`; it is not a user-tunable argument.
 
-Pass either `threshold=0.44` (default) or `threshold=0.48` to `predict_scene()` and `analyze_temporal_stack()`.
+| Threshold | Empirical Basis (LOFO-CV, $N=2{,}921$, 15 fields) | Accuracy | Balanced Acc | Precision | Recall | F1-Score |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: |
+| **`0.48`** | Peak out-of-fold F1 & Balanced Accuracy; median in-fold LOFO tuned cutoff (`0.4796`) | 0.945 | 0.945 | 0.954 | 0.941 | 0.947 |
 
 ---
 
@@ -74,11 +73,10 @@ ds = rcrc.preprocess_scene(
     buffer_m=-3.0,
 )
 
-# Run RCRC v3.1 inference and export Cloud-Optimized GeoTIFFs
+# Run rcrc v3.1 inference and export Cloud-Optimized GeoTIFFs
 summary = rcrc.predict_scene(
     preprocessed_data=ds,
     model_version="v3.1",
-    threshold=0.48,
     output_dir="outputs/single_date",
     prefix="BNC1_20260808",
 )
@@ -100,7 +98,6 @@ results = rcrc.analyze_temporal_stack(
     peak_ndvi_path="data/BNC1_20260701_3B_AnalyticMS_SR_8b_harmonized.tif",
     boundary_path="data/Boun_BNC1.gpkg",
     model_version="v3.1",
-    threshold=0.48,
     sd_mask=3.0,
     buffer_m=-3.0,
     field_id="BNC1",
@@ -127,7 +124,6 @@ res <- rcrc$analyze_temporal_stack(
   ),
   peak_ndvi_path = "data/BNC1_20260701.tif",
   boundary_path = "data/Boun_BNC1.gpkg",
-  threshold = 0.48,
   field_id = "BNC1"
 )
 
@@ -149,7 +145,7 @@ rcrc.register_model(
         "scaler_scale": [...],
         "coefficients": [...],
         "intercept": 0.0,
-        "default_threshold": 0.48,
+        "threshold": 0.48,
     },
 )
 ```

@@ -18,7 +18,7 @@ import pandas as pd
 import rioxarray  # noqa: F401
 import xarray as xr
 
-from rcrc.models import DEFAULT_MODEL_VERSION
+from rcrc.models import DEFAULT_MODEL_VERSION, get_model_spec
 from rcrc.predict import export_cog, predict_scene
 from rcrc.preprocess import preprocess_scene
 
@@ -185,7 +185,6 @@ def analyze_temporal_stack(
     peak_ndvi_path: str | Path,
     boundary_path: str | Path | gpd.GeoDataFrame,
     model_version: str = DEFAULT_MODEL_VERSION,
-    threshold: float = 0.44,
     sd_mask: float = 3.0,
     buffer_m: float = 0.0,
     field_id: str | None = None,
@@ -208,8 +207,6 @@ def analyze_temporal_stack(
             the 3-SD canopy mask.
         boundary_path: Path to the field polygon vector file or a ``GeoDataFrame``.
         model_version: Registered model version key (default ``"v3.1"``).
-        threshold: Binary classification cutoff in ``[0, 1]`` (default ``0.44``;
-            note ``0.48`` maximizes LOFO-CV F1 and Balanced Accuracy).
         sd_mask: Standard deviation multiplier below mean Peak NDVI for canopy
             masking (default ``3.0``).
         buffer_m: Optional metric buffer applied to the field boundary before
@@ -228,6 +225,7 @@ def analyze_temporal_stack(
         - ``"transitions_df"``: Pairwise transition summary ``pandas.DataFrame``.
         - ``"exported_files"``: Dictionary of exported file paths (if any).
     """
+    threshold = float(get_model_spec(model_version)["threshold"])
     ordered_scenes = _parse_and_sort_scenes(scene_dict)
     resolved_field_id = field_id or "field"
 
@@ -304,7 +302,6 @@ def analyze_temporal_stack(
         pred_res = predict_scene(
             masked_ds,
             model_version=model_version,
-            threshold=threshold,
             output_dir=cog_dir,
             prefix=f"{resolved_field_id}_{date_slug}",
             return_rasters=True,
