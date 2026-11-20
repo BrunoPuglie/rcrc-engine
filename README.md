@@ -27,15 +27,6 @@
 | **COG export** | Continuous `P(RCR)` and binary class rasters (`1` diseased, `0` healthy, `-1` nodata). |
 | **Temporal tracking** | Aligns scenes, shares one canopy mask and tracks pixel transitions. Outputs tidy `pandas` tables for `lme4`, `glmmTMB` or `statsmodels`. |
 
-### Transition classes
-
-| | Code | State | Change |
-| :---: | :---: | :--- | :---: |
-| ![](https://img.shields.io/badge/%20%20%20%20%20-D8F3DC?style=flat-square) | `0` | Unaffected | `0 → 0` |
-| ![](https://img.shields.io/badge/%20%20%20%20%20-F59E0B?style=flat-square) | `1` | New expansion | `0 → 1` |
-| ![](https://img.shields.io/badge/%20%20%20%20%20-3B82F6?style=flat-square) | `10` | Apparent recovery | `1 → 0` |
-| ![](https://img.shields.io/badge/%20%20%20%20%20-DC2626?style=flat-square) | `11` | Persistent infection | `1 → 1` |
-
 ---
 
 ## Installation
