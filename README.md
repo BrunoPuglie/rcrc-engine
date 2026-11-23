@@ -38,6 +38,14 @@ cd rcrc-engine
 pip install -e .
 ```
 
+### Development with [uv](https://docs.astral.sh/uv/)
+```bash
+git clone https://github.com/BrunoPuglie/rcrc-engine.git
+cd rcrc-engine
+uv sync --extra dev      # creates .venv and installs rcrc with dev extras
+uv run pytest
+```
+
 ### Google Colab
 ```python
 !pip install -q git+https://github.com/BrunoPuglie/rcrc-engine.git
