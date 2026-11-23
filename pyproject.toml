@@ -44,6 +44,9 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+plot = [
+    "matplotlib>=3.6",
+]
 dev = [
     "pytest>=7.0",
     "jupyter>=1.0",

@@ -25,6 +25,7 @@
 | **Canopy masking** | Clip to field boundary (optional `buffer_m=-3.0`), then a 3-SD Peak-NDVI mask (`mean - 3.0 * SD`) removes soil, waterways and non-crop pixels. |
 | **13 spectral features** | NDVI, GNDVI, NDRE, EVI, CI, CIRe, CSI plus six bands. Per-field `[0, 1]` normalization, then z-score standardization. |
 | **COG export** | Continuous `P(RCR)` and binary class rasters (`1` diseased, `0` healthy, `-1` nodata). |
+| **NDVI date guidance** | Season NDVI trajectory from free Sentinel-2 (no account needed) or local PlanetScope scenes gives the peak-canopy date for the mask and the optimal detection date `t0` (80 % of peak) with a +/-5-day window. |
 | **Temporal tracking** | Aligns scenes, shares one canopy mask and tracks pixel transitions. Outputs tidy `pandas` tables for `lme4`, `glmmTMB` or `statsmodels`. |
 
 ---
@@ -71,6 +72,35 @@ rcrc <- import("rcrc")
 ---
 
 ## Quickstart
+
+### 0. NDVI Trajectory Inspection (choose dates)
+Run this before the detection steps. It finds the **peak canopy** date (used for `peak_ndvi_path`) and the **optimal detection date** `t0`, the first post-peak point where the daily NDVI trajectory reaches 80 % of peak, with a +/-5-day window around it.
+
+```python
+from pathlib import Path
+import rcrc
+
+# Free Sentinel-2 L2A from the public AWS Earth Search catalog
+traj = rcrc.analyze_ndvi_phenology(
+    boundary_path="data/Boun_BNC1.gpkg",
+    year=2026,
+    cache_csv="outputs/BNC1_2026_ndvi.csv",   # optional: reused on later runs, no download
+)
+
+# Alternative: PlanetScope scenes already on disk
+# traj = rcrc.analyze_ndvi_phenology(..., source="planetscope",
+#                              scenes=sorted(Path("data").glob("BNC1_*_8b_harmonized.tif")))
+
+print(traj.summary())  
+
+# Pick the available PlanetScope scene closest to each key date
+matched = rcrc.match_scenes_to_trajectory(traj, sorted(Path("data").glob("BNC1_*.tif")))
+rcrc.plot_ndvi_trajectory(traj, title="BNC1 2026", matched=matched)   # needs matplotlib
+```
+
+`matched` gives the `peak` scene for `peak_ndvi_path` and the `before` / `target` / `after` scenes for `scene_dict` in step 2.
+
+The default source reads only the field window of the Sentinel-2 red, NIR and scene-classification Cloud-Optimized GeoTIFFs over HTTPS (one season takes seconds). It masks clouds, shadow and cirrus with the same SCL classes as rcr-scout, harmonizes values across Sentinel-2 processing baselines, and drops dates where less than half of the field is clear (`min_clear_fraction` in `rcrc.fetch_sentinel2_ndvi`). Any table with `date` and `ndvi` columns can also go straight to `rcrc.compute_ndvi_trajectory(df)`.
 
 ### 1. Single-Date Preprocessing & Inference
 ```python

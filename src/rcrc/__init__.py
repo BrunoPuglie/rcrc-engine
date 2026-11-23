@@ -1,7 +1,8 @@
 """rcrc-engine: Lightweight Soybean Red Crown Rot (RCR) classification library.
 
 Provides geospatial preprocessing, pure NumPy/SciPy L2 logistic inference,
-and multi-date temporal disease progression analysis for 8-band PlanetScope
+multi-date temporal disease progression analysis, and seasonal NDVI
+trajectory inspection to guide detection-date selection for 8-band PlanetScope
 imagery (``3B_AnalyticMS_SR_8b_harmonized``).
 """
 
@@ -15,6 +16,15 @@ from rcrc.models import (
     get_model_spec,
     list_models,
     register_model,
+)
+from rcrc.phenology import (
+    NDVITrajectory,
+    analyze_ndvi_phenology,
+    compute_ndvi_trajectory,
+    fetch_sentinel2_ndvi,
+    match_scenes_to_trajectory,
+    planetscope_ndvi_series,
+    plot_ndvi_trajectory,
 )
 from rcrc.predict import export_cog, predict_scene
 from rcrc.preprocess import (
@@ -43,6 +53,7 @@ __all__ = [
     "DEFAULT_MODEL_VERSION",
     "FEATURE_NAMES_V3_1",
     "MODEL_REGISTRY",
+    "NDVITrajectory",
     "PLANET_8B_INDICES",
     "TRANSITION_LABELS",
     "TRANSITION_NEW_EXPANSION",
@@ -50,16 +61,22 @@ __all__ = [
     "TRANSITION_PERSISTENT",
     "TRANSITION_RECOVERY",
     "TRANSITION_UNAFFECTED",
+    "analyze_ndvi_phenology",
     "analyze_temporal_stack",
     "compute_canopy_mask",
+    "compute_ndvi_trajectory",
     "compute_probabilities_from_features",
     "compute_spectral_features",
     "compute_transition_matrix",
     "export_cog",
+    "fetch_sentinel2_ndvi",
     "get_model_spec",
     "list_models",
     "load_boundary",
+    "match_scenes_to_trajectory",
     "min_max_scale_canopy",
+    "planetscope_ndvi_series",
+    "plot_ndvi_trajectory",
     "predict_scene",
     "preprocess_scene",
     "register_model",
